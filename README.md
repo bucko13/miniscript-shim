@@ -68,3 +68,28 @@ wasm-pack publish
     for logging panic messages to the developer console.
 -   [`wee_alloc`](https://github.com/rustwasm/wee_alloc), an allocator optimized
     for small code size.
+
+
+## Building For Local Dev
+* make sure to follow the [sapio install instructions](https://learn.sapio-lang.org/ch01-01-installation.html)
+
+```shell
+$  rustup target add wasm32-unknown-unknown
+$ export CC=/usr/local/Cellar/llvm/13.0.1/bin/clang
+$ export PATH="/usr/local/Cellar/llvm/bin:$PATH"
+$ export AR=/usr/local/Cellar/llvm/13.0.1/bin/llvm-ar
+$ export CC=/usr/local/Cellar/llvm/13.0.1/bin/clang
+```
+
+#### For running the playground
+* Run `wasm-pack build` inside your project dictionary
+* Run `npm install` inside www folder
+* Again run `npm install` inside www folder (just to be sure)
+* Finally run `npm run start` inside www and visit http://localhost:8080 to see the results
+
+
+## For deployment :
+* Create a new branch by the name gh-pages
+* Github pages should be enabled by default but if not go to Settings -> GitHub Pages and enable it on your gh-pages branch. You will also find the link to your to-be hosted page there
+* Make a personal access token (only the token no need for command line here)
+* Next we will need to put this token into our travis settings, go to more options -> settings -> Environment Variables and enter the token value (the generated token code) and name as GITHUB_TOKEN, it should look like :
