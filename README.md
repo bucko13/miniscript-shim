@@ -78,11 +78,10 @@ $  rustup target add wasm32-unknown-unknown
 $ export CC=/usr/local/Cellar/llvm/13.0.1/bin/clang
 $ export PATH="/usr/local/Cellar/llvm/bin:$PATH"
 $ export AR=/usr/local/Cellar/llvm/13.0.1/bin/llvm-ar
-$ export CC=/usr/local/Cellar/llvm/13.0.1/bin/clang
 ```
 
 #### For running the playground
-* Run `wasm-pack build` inside your project dictionary
+* Run `wasm-pack build` inside your project directory
 * Run `npm install` inside www folder
 * Again run `npm install` inside www folder (just to be sure)
 * Finally run `npm run start` inside www and visit http://localhost:8080 to see the results

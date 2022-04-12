@@ -5,9 +5,8 @@ mod utils;
 use crate::bitcoin::Script;
 use crate::bitcoin::XOnlyPublicKey;
 use std::collections::HashMap;
-use std::rc::Rc;
-use std::sync::Arc;
 use wasm_bindgen::prelude::*;
+use serde::{Serialize, Deserialize};
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -28,6 +27,119 @@ pub fn compile(s: &str) -> Result<String, JsValue> {
     let ms: Miniscript<String, Tap> = pol.compile().map_err(|e| e.to_string())?;
     Ok(ms.to_string())
 }
+
+
+use sapio_miniscript::{ descriptor::DescriptorPublicKey, Descriptor, descriptor::DescriptorType, descriptor::Sh};
+
+// get descriptor types in javascript. copy from rust-miniscript's DescriptorType enum
+#[derive(Serialize, Deserialize)]
+pub struct DescriptorTypeStruct {
+    /// Bare descriptor(Contains the native P2pk)
+    pub Bare: &'static str,
+    /// Pure Sh Descriptor. Does not contain nested Wsh/Wpkh
+    pub Sh: &'static str,
+    /// Pkh Descriptor
+    pub Pkh: &'static str,
+    /// Wpkh Descriptor
+    Wpkh: &'static str,
+    /// Wsh
+    Wsh: &'static str,
+    /// Sh Wrapped Wsh
+    ShWsh: &'static str,
+    /// Sh wrapped Wpkh
+    ShWpkh: &'static str,
+    /// Sh Sorted Multi
+    ShSortedMulti: &'static str,
+    /// Wsh Sorted Multi
+    WshSortedMulti: &'static str,
+    /// Sh Wsh Sorted Multi
+    ShWshSortedMulti: &'static str,
+}
+
+const BARE: &'static str = "Bare";
+const SH: &'static str = "Sh";
+const PKH: &'static str = "Pkh";
+const WPKH: &'static str = "Wpkh";
+const WSH: &'static str = "Wsh";
+const SH_WSH: &'static str = "ShWsh";
+const SH_WPKH: &'static str = "ShWpkh";
+const SH_SORTED_MULTI: &'static str = "ShSortedMulti";
+const WSH_SORTED_MULTI: &'static str = "WshSortedMulti";
+const SH_WSH_SORTED_MULTI: &'static str = "ShWshSortedMulti";
+
+pub const DESCRIPTOR_TYPES: DescriptorTypeStruct = DescriptorTypeStruct {
+        Bare: BARE,
+        Sh: SH,
+        Pkh: PKH,
+        Wpkh: WPKH,
+        Wsh: WSH,
+        ShWsh: SH_WSH,
+        ShWpkh: SH_WPKH,
+        ShSortedMulti: SH_SORTED_MULTI,
+        WshSortedMulti: WSH_SORTED_MULTI,
+        ShWshSortedMulti: SH_WSH_SORTED_MULTI,
+    };
+
+#[wasm_bindgen]
+pub fn get_descriptor_types() -> Result<JsValue, JsValue> {
+    return Ok(serde_wasm_bindgen::to_value(&DESCRIPTOR_TYPES)?);
+}
+
+#[wasm_bindgen]
+pub fn get_script_type(s: &str) -> Result<String, String> {
+    let descriptor =  match Descriptor::<DescriptorPublicKey>::from_str(s) {
+        Ok(desc) => desc,
+        Err(e) => return Err(e.to_string()),
+    };
+
+    let desc_type = match descriptor.desc_type() {
+        DescriptorType::Bare => BARE,
+        DescriptorType::Pkh => PKH,
+        DescriptorType::Wpkh => WPKH,
+        DescriptorType::Wsh => WSH,
+        DescriptorType::ShWsh => SH_WSH,
+        DescriptorType::ShSortedMulti => SH_SORTED_MULTI,
+        DescriptorType::WshSortedMulti => WSH_SORTED_MULTI,
+        DescriptorType::ShWshSortedMulti => SH_WSH_SORTED_MULTI,
+        _ => ""
+    };
+    Ok(desc_type.to_string())
+}
+
+
+use sapio_miniscript::Miniscript;
+#[wasm_bindgen]
+pub fn get_threshold_count(s: &str) -> Result<String, String> {
+    let descriptor =  match Descriptor::<DescriptorPublicKey>::from_str(s) {
+        Ok(desc) => desc,
+        Err(e) => return Err(e.to_string()),
+    };
+
+    let threshold = match descriptor {
+        Descriptor::Sh (desc) => {
+            match desc.into_inner() {
+                descriptor::ShInner::SortedMulti(inner) => inner.k,
+                descriptor::ShInner::Wsh(sh_inner) => {
+                    match sh_inner.as_inner() {
+                        descriptor::WshInner::SortedMulti(inner) => inner.k,
+                        _ => return Err("no multisig found in nested wsh".to_string())
+                    }
+                }
+                _ => return Err("No threshold".to_string())
+            }
+        },
+        Descriptor::Wsh (desc) => {
+            match desc.into_inner() {
+                descriptor::WshInner::SortedMulti(inner) => inner.k,
+                _ => return Err("No threshold".to_string())
+            }
+        },
+        _ => return Err("Descriptor type does not have threshold".to_string())
+    };
+
+    Ok(threshold.to_string())
+}
+
 use bitcoin::secp256k1::VerifyOnly;
 use sapio_miniscript::bitcoin::secp256k1::Secp256k1;
 use std::lazy::SyncLazy;

@@ -1,4 +1,4 @@
-import {compile} from "miniscript-shim";
+import {get_descriptor_types, get_script_type, get_threshold_count} from "miniscript-shim";
 
 const UNICODE_LINE = /\r\n|(?!\r\n)[\n-\r\x85\u2028\u2029]/;
 
@@ -9,12 +9,13 @@ const result = descriptor.split(UNICODE_LINE)
                 if (v.match(UNICODE_LINE)) return [];
                 try {
                     /// TODO: Cache based on V
-                    const s = compile(v);
+                    const s = get_script_type(v);
                     return [['ok', v, s]];
                 } catch (e) {
                     if (typeof e === 'string') return [['err', v, e]];
                     else throw e;
                 }
             });
-
+console.log(get_descriptor_types())
 console.log(result)
+console.log(`threshold: ${get_threshold_count(descriptor)}`)
