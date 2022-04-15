@@ -116,11 +116,15 @@ pub fn get_threshold_count(s: &str) -> Result<String, String> {
     };
 
     let threshold = match descriptor {
+        // descriptor is P2SH, need to see what its inner script is
         Descriptor::Sh (desc) => {
             match desc.into_inner() {
+                // if it's just plain multisig in P2SH
                 descriptor::ShInner::SortedMulti(inner) => inner.k,
+                // nested WSH in P2SH
                 descriptor::ShInner::Wsh(sh_inner) => {
                     match sh_inner.as_inner() {
+                        // make sure the wsh is sorted multi
                         descriptor::WshInner::SortedMulti(inner) => inner.k,
                         _ => return Err("no multisig found in nested wsh".to_string())
                     }
@@ -128,8 +132,10 @@ pub fn get_threshold_count(s: &str) -> Result<String, String> {
                 _ => return Err("No threshold".to_string())
             }
         },
+        // descriptor is P2WSH
         Descriptor::Wsh (desc) => {
             match desc.into_inner() {
+                // check that its inner script is sorted multi
                 descriptor::WshInner::SortedMulti(inner) => inner.k,
                 _ => return Err("No threshold".to_string())
             }
